@@ -88,6 +88,7 @@ class coco(IMDB):
         self.mask_size = mask_size
         self.binary_thresh = binary_thresh
         self.load_mask = load_mask
+        self.im_use_zip = True
 
         # deal with data name
         view_map = {'minival2014': 'val2014',
@@ -110,9 +111,16 @@ class coco(IMDB):
 
     def image_path_from_index(self, index):
         """ example: images / train2014 / COCO_train2014_000000119993.jpg """
-        filename = 'COCO_%s_%012d.jpg' % (self.data_name, index)
-        image_path = os.path.join(self.data_path, 'images', self.data_name, filename)
-        assert os.path.exists(image_path), 'Path does not exist: {}'.format(image_path)
+        filename = 'COCO_%s_%012d.jpg' % (self.data_name, index)        
+        if not self.im_use_zip:
+            image_path = os.path.join(self.data_path, self.data_name, filename)
+            assert os.path.exists(image_path), 'Path does not exist: {}'.format(image_path)
+        else:
+            if self.data_name == 'test2017':
+                filename = '%012d.jpg' % index
+                image_path = self.data_path + '/coco_' + self.data_name + '.zip@' + self.data_name + '/' + filename
+            else:
+                image_path = self.data_path + '/coco_' + self.data_name + '.zip@coco_' + self.data_name + '/' + filename
         return image_path
 
     def gt_roidb(self):

@@ -4,33 +4,17 @@
 # Training Module
 # by Mahyar Najibi and Bharat Singh
 # --------------------------------------------------------------
-import init
-import matplotlib
-matplotlib.use('Agg')
-import os
-os.environ['PYTHONUNBUFFERED'] = '1'
-os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '2'
-#os.environ['MXNET_ENABLE_GPU_P2P'] = '1'
-from iterators.MNIteratorE2E import MNIteratorE2E
-import sys
-sys.path.insert(0, 'lib')
-from symbols.faster import *
-from configs.faster.default_configs import config, update_config, update_config_from_list
-import mxnet as mx
-from train_utils import metric
-from train_utils.utils import get_optim_params, get_fixed_param_names, create_logger, load_param
-from iterators.PrefetchingIter import PrefetchingIter
-
-from data_utils.load_data import load_proposal_roidb, merge_roidb, filter_roidb
-from bbox.bbox_regression import add_bbox_regression_targets
 import argparse
+from configs.faster.default_configs import config, update_config, update_config_from_list
+import os
+import sys
 
 def parser():
     arg_parser = argparse.ArgumentParser('SNIPER training module')
     arg_parser.add_argument('--cfg', dest='cfg', help='Path to the config file',
     							default='configs/faster/sniper_res101_e2e.yml',type=str)
     arg_parser.add_argument('--display', dest='display', help='Number of epochs between displaying loss info',
-                            default=100, type=int)
+                            default=10, type=int)
     arg_parser.add_argument('--momentum', dest='momentum', help='BN momentum', default=0.995, type=float)
     arg_parser.add_argument('--save_prefix', dest='save_prefix', help='Prefix used for snapshotting the network',
                             default='SNIPER', type=str)
@@ -39,14 +23,34 @@ def parser():
 
     return arg_parser.parse_args()
 
+args = parser()
+update_config(args.cfg)
+if args.set_cfg_list:
+    update_config_from_list(args.set_cfg_list)
 
-if __name__ == '__main__':
+curr_path = os.path.abspath(os.path.dirname(__file__))
+mxnet_path = os.path.join(curr_path, 'external/mxnet', config.MXNET_VERSION)
+if os.path.exists(mxnet_path):
+    sys.path.insert(0, mxnet_path)
+import mxnet as mx
 
-    args = parser()
-    update_config(args.cfg)
-    if args.set_cfg_list:
-        update_config_from_list(args.set_cfg_list)
+import init
+import matplotlib
+matplotlib.use('Agg')
+os.environ['PYTHONUNBUFFERED'] = '1'
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '2'
+os.environ['MXNET_ENABLE_GPU_P2P'] = '0'
+from iterators.MNIteratorE2E import MNIteratorE2E
+sys.path.insert(0, 'lib')
+from symbols.faster import *
+from train_utils import metric
+from train_utils.utils import get_optim_params, get_fixed_param_names, create_logger, load_param
+from iterators.PrefetchingIter import PrefetchingIter
 
+from data_utils.load_data import load_proposal_roidb, merge_roidb, filter_roidb
+from bbox.bbox_regression import add_bbox_regression_targets
+
+if __name__ == '__main__':        
     context = [mx.gpu(int(gpu)) for gpu in config.gpus.split(',')]
     nGPUs = len(context)
     batch_size = nGPUs * config.TRAIN.BATCH_IMAGES

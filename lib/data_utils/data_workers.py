@@ -16,7 +16,7 @@ from chips.chip_generator import chip_generator
 import math
 import copy_reg
 import types
-
+from data_utils import phillyzip
 
 # Pickle dumping recipe for using classes with multi-processing map
 def _unpickle_method(func_name, obj, cls):
@@ -52,7 +52,10 @@ class im_worker(object):
         imp = data[0]
         flipped = data[2]
         pixel_means = self.cfg.network.PIXEL_MEANS
-        im = cv2.imread(imp, cv2.IMREAD_COLOR)
+        if 'zip@' in imp:
+            im = phillyzip.imread(imp, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+        else:
+            im = cv2.imread(imp, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
         # Flip the image
         if flipped:
             im = im[:, ::-1, :]

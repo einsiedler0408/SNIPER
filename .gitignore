@@ -12,3 +12,4 @@ debug/*
 *.idx
 *.lst
 *.o
+external

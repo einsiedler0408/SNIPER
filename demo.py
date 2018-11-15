@@ -4,21 +4,10 @@
 # SNIPER demo
 # by Mahyar Najibi
 # --------------------------------------------------------------
-import init
-import matplotlib
-matplotlib.use('Agg')
-from configs.faster.default_configs import config, update_config, update_config_from_list
-import mxnet as mx
 import argparse
-from train_utils.utils import create_logger, load_param
+from configs.faster.default_configs import config, update_config, update_config_from_list
 import os
-from PIL import Image
-from iterators.MNIteratorTest import MNIteratorTest
-from easydict import EasyDict
-from inference import Tester
-from symbols.faster import *
-os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
-
+import sys
 
 def parser():
     arg_parser = argparse.ArgumentParser('SNIPER demo module')
@@ -32,13 +21,29 @@ def parser():
                             default=None, nargs=argparse.REMAINDER)
     return arg_parser.parse_args()
 
+args = parser()
+update_config(args.cfg)
+if args.set_cfg_list:
+    update_config_from_list(args.set_cfg_list)
+
+curr_path = os.path.abspath(os.path.dirname(__file__))
+mxnet_path = os.path.join(curr_path, 'external/mxnet', config.MXNET_VERSION)
+if os.path.exists(mxnet_path):
+    sys.path.insert(0, mxnet_path)
+import mxnet as mx
+
+import init
+import matplotlib
+matplotlib.use('Agg')
+from train_utils.utils import create_logger, load_param
+from PIL import Image
+from iterators.MNIteratorTest import MNIteratorTest
+from easydict import EasyDict
+from inference import Tester
+from symbols.faster import *
+os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
 
 def main():
-    args = parser()
-    update_config(args.cfg)
-    if args.set_cfg_list:
-        update_config_from_list(args.set_cfg_list)
-
     # Use just the first GPU for demo
     context = [mx.gpu(int(config.gpus[0]))]
 
